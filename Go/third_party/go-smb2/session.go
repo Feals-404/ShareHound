@@ -93,8 +93,15 @@ func sessionSetup(conn *conn, i Initiator, ctx context.Context) (*session, error
 		if status != erref.STATUS_MORE_PROCESSING_REQUIRED && status != erref.STATUS_SUCCESS {
 			return nil, &InvalidResponseError{fmt.Sprintf("expected status: %v or %v, got %v", erref.STATUS_MORE_PROCESSING_REQUIRED, erref.STATUS_SUCCESS, status)}
 		}
-		if err := updatePreauthIntegrityHash(pkt); err != nil {
-			return nil, err
+		// The pre-auth integrity hash (SMB 3.1.1) must include every session
+		// setup request but NOT the final response: the server signs that final
+		// response with the key derived from the hash through the final request.
+		// Folding it in here yielded a wrong signing key and made every signed
+		// reply fail verification ("unverified packet returned").
+		if status == erref.STATUS_MORE_PROCESSING_REQUIRED {
+			if err := updatePreauthIntegrityHash(pkt); err != nil {
+				return nil, err
+			}
 		}
 
 		res, err := accept(smb2.SMB2_SESSION_SETUP, pkt)
