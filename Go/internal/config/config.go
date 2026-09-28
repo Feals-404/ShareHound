@@ -7,8 +7,9 @@ import (
 
 // Config holds the configuration settings for ShareHound.
 type Config struct {
-	debug    bool
-	noColors bool
+	debug      bool
+	noColors   bool
+	smbDialect uint16 // forced SMB dialect (0 = auto-negotiate)
 }
 
 // NewConfig creates a new Config with the given settings.
@@ -50,4 +51,14 @@ func (c *Config) NoColors() bool {
 // SetNoColors sets whether colored output is disabled.
 func (c *Config) SetNoColors(value bool) {
 	c.noColors = value
+}
+
+// SMBDialect returns the forced SMB dialect (0 = auto-negotiate).
+func (c *Config) SMBDialect() uint16 {
+	return c.smbDialect
+}
+
+// SetSMBDialect sets the forced SMB dialect (0 = auto-negotiate).
+func (c *Config) SetSMBDialect(value uint16) {
+	c.smbDialect = value
 }

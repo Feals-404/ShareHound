@@ -124,6 +124,11 @@ func (s *SMBSession) Connect() error {
 	dialer := &smb2.Dialer{
 		Initiator: initiator,
 	}
+	// Force a specific SMB dialect when requested (0 = auto-negotiate).
+	// Works around a signing bug in the bundled go-smb2 under SMB 3.1.1.
+	if s.config != nil {
+		dialer.Negotiator.SpecifiedDialect = s.config.SMBDialect()
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)

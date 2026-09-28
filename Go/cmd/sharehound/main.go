@@ -48,6 +48,7 @@ var (
 	nameserver        string
 	timeout           float64
 	hostTimeout       float64
+	smbDialect        string
 
 	// Rules
 	rulesFiles  []string
@@ -107,6 +108,7 @@ creating a BloodHound-compatible OpenGraph for security analysis.`,
 	rootCmd.Flags().StringVarP(&nameserver, "nameserver", "n", "", "Nameserver for DNS queries")
 	rootCmd.Flags().Float64VarP(&timeout, "timeout", "t", 2.5, "Timeout in seconds for network operations")
 	rootCmd.Flags().Float64Var(&hostTimeout, "host-timeout", 0, "Maximum time in minutes per host (0 = no limit)")
+	rootCmd.Flags().StringVar(&smbDialect, "smb-dialect", "", "Force SMB dialect: 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1 (default: auto-negotiate)")
 
 	// Rules
 	rootCmd.Flags().StringArrayVarP(&rulesFiles, "rules-file", "r", nil, "Path to file containing rules")
@@ -190,6 +192,15 @@ func run(cmd *cobra.Command, args []string) {
 
 	// Create configuration
 	cfg := config.NewConfig(debug, &noColors)
+
+	// Force SMB dialect if requested
+	dialects := map[string]uint16{"": 0, "2.0.2": 0x0202, "2.1": 0x0210, "3.0": 0x0300, "3.0.2": 0x0302, "3.1.1": 0x0311}
+	dialect, ok := dialects[smbDialect]
+	if !ok {
+		fmt.Printf("[!] Invalid --smb-dialect %q (valid: 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1).\n", smbDialect)
+		os.Exit(1)
+	}
+	cfg.SetSMBDialect(dialect)
 
 	// Create logger
 	log := logger.NewLogger(cfg, logfile)
